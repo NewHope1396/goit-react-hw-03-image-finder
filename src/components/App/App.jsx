@@ -60,26 +60,24 @@ export class App extends Component {
     this.setState(() => {
       return { selectedImage: image }
     });
+    this.openModal();
   }
 
   componentDidMount () {
     this.fetchUrl('')
   } 
 
-  componentDidUpdate(_, prevState) {
-    if (prevState.selectedImage !== this.state.selectedImage) {
-      this.openModal();
-    }
-  }
-
   render() {
+
+    const { loading, images, showModal, selectedImage } = this.state;
+
     return (
       <Container>
         <Searchbar onSearchSubmit={this.fetchUrl}></Searchbar>
-        {!this.state.loading && <ImageGallery images={this.state.images} onImageClick={this.selectImage}></ImageGallery>}
-        {this.state.loading && <MySpiner></MySpiner>}
-        {(this.state.images.length !== 0) && !this.state.loading && <Button loadMore={this.loadMore}></Button>} 
-        {this.state.showModal && <Modal image={this.state.selectedImage} closeModal={this.closeModal}></Modal>}
+        {!loading && <ImageGallery images={images} onImageClick={this.selectImage}></ImageGallery>}
+        {loading && <MySpiner></MySpiner>}
+        {(images.length !== 0) && !loading && <Button loadMore={this.loadMore}></Button>} 
+        {showModal && <Modal image={selectedImage} closeModal={this.closeModal}></Modal>}
       </Container>
   )}
 };
