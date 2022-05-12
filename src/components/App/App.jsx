@@ -17,67 +17,73 @@ export class App extends Component {
     currentPage: 1,
     keyWord: '',
     loading: false,
-    showModal: false,
     selectedImage: null
   }
 
-  fetchUrl = async (keyWord) => {
-    this.setState({loading:true})
-    const images = await axios.get(`?key=25354939-b34ef3161dfabf3cda0874337&q=${keyWord}&image_type=photo&orientation=horizontal&per_page=15&page=${this.state.currentPage}`);
+  fetchImages = async () => {
+    const { keyWord, currentPage } = this.state;
+    const images = await axios.get(`?key=25354939-b34ef3161dfabf3cda0874337&q=${keyWord}&image_type=photo&orientation=horizontal&per_page=15&page=${currentPage}`);
+    return images.data.hits;
+  }
+
+  onSubmit = (keyWord) => {
     this.setState({
-      images: images.data.hits,
       currentPage: 1,
       keyWord: keyWord,
-      loading: false,
+      loading: true,
     })
   }
 
-  loadMore = async () => {
-    this.setState({loading: true})
-    const response = await axios.get(`?key=25354939-b34ef3161dfabf3cda0874337&q=${this.state.keyWord}&image_type=photo&orientation=horizontal&per_page=15&page=${this.state.currentPage + 1}`);
-    const newImages = await response.data.hits;
+  componentDidUpdate (_, prevState) {
+    if (prevState.keyWord !== this.state.keyWord) {
+      this.fetchImages().then(
+        images => this.setState({images, loading: false})
+      );
+      return
+    }
 
+    if (this.state.currentPage !== prevState.currentPage && this.state.currentPage !== 1) {
+      this.fetchImages().then(
+        newImages =>
+          this.setState((prevState) => {
+          return {
+            images: [...prevState.images, ...newImages],
+            loading: false
+          }})
+      )
+    }
+  }
+
+  loadMore = () => {
     this.setState(prevState => ({
       currentPage: prevState.currentPage + 1,
-      images: [...prevState.images, ...newImages],
-      loading: false,
+      loading: true,
     }))
   }
 
   closeModal = () => {
   this.setState({
-      showModal: false,
-    })
-  }
-
-  openModal = () => {
-    this.setState({
-      showModal: true,
+      selectedImage: null
     })
   }
 
   selectImage = (image) => {
     this.setState(() => {
       return { selectedImage: image }
-    });
-    this.openModal();
+    })
   }
-
-  componentDidMount () {
-    this.fetchUrl('')
-  } 
 
   render() {
 
-    const { loading, images, showModal, selectedImage } = this.state;
+    const { loading, images, selectedImage } = this.state;
 
     return (
       <Container>
-        <Searchbar onSearchSubmit={this.fetchUrl}></Searchbar>
+        <Searchbar onSearchSubmit={this.onSubmit}></Searchbar>
         {!loading && <ImageGallery images={images} onImageClick={this.selectImage}></ImageGallery>}
         {loading && <MySpiner></MySpiner>}
         {(images.length !== 0) && !loading && <Button loadMore={this.loadMore}></Button>} 
-        {showModal && <Modal image={selectedImage} closeModal={this.closeModal}></Modal>}
+        {selectedImage && <Modal image={selectedImage} closeModal={this.closeModal}></Modal>}
       </Container>
   )}
 };
